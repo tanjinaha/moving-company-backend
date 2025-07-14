@@ -2,6 +2,7 @@ package com.tanjina.mvc.backend.repository;  // This shows the folder/package wh
 
 // This import brings in the Customer class, so we can use it here
 import com.tanjina.mvc.backend.entity.Customer;
+import java.util.List;
 
 // These imports bring in Spring Boot tools to talk to the database
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Repository;
 // A Repository is a tool that helps us work with the database
 @Repository
 public interface CustomerRepository extends JpaRepository<Customer, Integer> {
+    List<Customer> findByCustomerNameContainingIgnoreCase(String name);
 
     // What does this do?
     // This interface says:

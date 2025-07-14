@@ -9,6 +9,11 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
 
+
+
+
+@CrossOrigin(origins = "http://localhost:5173")
+
 /**
  * REST controller for managing OrderServiceType entities.
  * Provides endpoints for CRUD operations.

@@ -31,7 +31,7 @@ public class SalesConsultantService {
 
     // 2. GET a list of all sales consultants from the database
     public List<SalesConsultant> getAllSalesConsultants() {
-        // This returns all rows from the "salesconsultants" table
+        // This returns all rows from the "salesConsultants" table
         return salesConsultantRepository.findAll();
     }
 

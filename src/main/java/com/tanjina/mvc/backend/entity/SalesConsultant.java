@@ -3,10 +3,10 @@ package com.tanjina.mvc.backend.entity;
 import jakarta.persistence.*;
 
 /**
- * Entity class for salesconsultants table.
+ * Entity class for salesConsultants table.
  */
 @Entity
-@Table(name = "salesconsultants")
+@Table(name = "salesConsultants")
 public class SalesConsultant {
 
     @Id

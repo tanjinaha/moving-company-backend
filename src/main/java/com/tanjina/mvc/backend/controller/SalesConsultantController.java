@@ -8,12 +8,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
 
+@CrossOrigin(origins = "http://localhost:5173")
 // @RestController tells Spring Boot: "This class handles API/web requests."
 // It will not return HTML pages — it returns data (like JSON).
 @RestController
 
 // @RequestMapping sets the base URL for all methods in this controller.
-// This means all endpoints will start with "/salesconsultants"
+// This means all endpoints will start with "/salesConsultants"
 @RequestMapping("/salesconsultants")
 public class SalesConsultantController {
 
@@ -28,9 +29,9 @@ public class SalesConsultantController {
     }
 
     // -----------------------------------------------------------------------
-    // POST /salesconsultants
+    // POST /salesConsultants
     // This method adds a new sales consultant to the database.
-    // @PostMapping handles POST requests to the URL /salesconsultants
+    // @PostMapping handles POST requests to the URL /salesConsultants
     // @RequestBody tells Spring: "Get the sales consultant data from the request body"
     @PostMapping
     public ResponseEntity<SalesConsultant> addSalesConsultant(@RequestBody SalesConsultant salesConsultant) {
@@ -39,9 +40,9 @@ public class SalesConsultantController {
     }
 
     // -----------------------------------------------------------------------
-    // GET /salesconsultants
+    // GET /salesConsultants
     // This method returns a list of all sales consultants in the database
-    // @GetMapping handles GET requests to the URL /salesconsultants
+    // @GetMapping handles GET requests to the URL /salesConsultants
     @GetMapping
     public ResponseEntity<List<SalesConsultant>> getAllSalesConsultants() {
         List<SalesConsultant> consultants = salesConsultantService.getAllSalesConsultants();  // Get all sales consultants from service
@@ -49,7 +50,7 @@ public class SalesConsultantController {
     }
 
     // -----------------------------------------------------------------------
-    // GET /salesconsultants/{id}
+    // GET /salesConsultants/{id}
     // This method returns a specific sales consultant by their ID
     // @PathVariable tells Spring: "Use the number in the URL as the sales consultant ID"
     @GetMapping("/{id}")
@@ -62,7 +63,7 @@ public class SalesConsultantController {
     }
 
     // -----------------------------------------------------------------------
-    // PUT /salesconsultants
+    // PUT /salesConsultants
     // This method updates an existing sales consultant in the database
     // @PutMapping handles PUT requests (used for updates)
     @PutMapping
@@ -72,9 +73,9 @@ public class SalesConsultantController {
     }
 
     // -----------------------------------------------------------------------
-    // DELETE /salesconsultants/{id}
+    // DELETE /salesConsultants/{id}
     // This method deletes a sales consultant by their ID
-    // @DeleteMapping handles DELETE requests to the URL /salesconsultants/{id}
+    // @DeleteMapping handles DELETE requests to the URL /salesConsultants/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteSalesConsultant(@PathVariable Integer id) {
         salesConsultantService.deleteSalesConsultant(id);  // Ask the service to delete by ID
