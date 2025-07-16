@@ -1,83 +1,62 @@
 package com.tanjina.mvc.backend.entity;
 
+import com.tanjina.mvc.backend.entity.ServiceTypeEnum; // ✅ import the enum
 import jakarta.persistence.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
 /**
- * Entity class representing a row in the 'orderservicetypes' table.
- * This table links Orders to ServiceTypes and includes extra details like addresses, schedule, and price.
+ * This entity represents one service included in an order.
+ * It connects to the Order table and stores the type of service (as enum), address, date, and price.
  */
 @Entity
 @Table(name = "orderservicetypes")
 public class OrderServiceType {
 
-    /**
-     * Primary key column 'orderservicetype_id', auto-incremented.
-     */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "orderservicetype_id")
     private Integer orderServiceTypeId;
 
-    /**
-     * Foreign key column 'order_id' linking to the Orders table.
-     */
-    @Column(name = "order_id", nullable = false)
-    private Integer orderId;
+    // ✅ Use enum to represent the service type (MOVING, CLEANING, etc.)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "service_type", nullable = false)
+    private ServiceTypeEnum serviceType;
 
-    /**
-     * Foreign key column 'service_id' linking to the ServiceTypes table.
-     */
-    @Column(name = "service_id", nullable = false)
-    private Integer serviceId;
+    // ✅ Link to the Order entity
+    @ManyToOne
+    @JoinColumn(name = "order_id", nullable = false)
+    private Order order;
 
-    /**
-     * Column 'from_address' storing the starting address for this service.
-     */
     @Column(name = "from_address", length = 255)
     private String fromAddress;
 
-    /**
-     * Column 'to_address' storing the destination address for this service.
-     */
     @Column(name = "to_address", length = 255)
     private String toAddress;
 
-    /**
-     * Column 'schedule_date' storing the scheduled date for this service.
-     */
     @Column(name = "schedule_date")
     private LocalDate scheduleDate;
 
-    /**
-     * Column 'price' storing the price for this service.
-     * BigDecimal is used for precise monetary values.
-     */
     @Column(name = "price", precision = 10, scale = 2)
     private BigDecimal price;
 
-    /**
-     * Default no-argument constructor required by JPA.
-     */
+    // ✅ Default constructor
     public OrderServiceType() {}
 
-    /**
-     * Parameterized constructor for easy instantiation.
-     */
-    public OrderServiceType(Integer orderServiceTypeId, Integer orderId, Integer serviceId,
+    // ✅ Constructor with all fields (uses ServiceTypeEnum)
+    public OrderServiceType(Integer orderServiceTypeId, ServiceTypeEnum serviceType, Order order,
                             String fromAddress, String toAddress, LocalDate scheduleDate, BigDecimal price) {
         this.orderServiceTypeId = orderServiceTypeId;
-        this.orderId = orderId;
-        this.serviceId = serviceId;
+        this.serviceType = serviceType;
+        this.order = order;
         this.fromAddress = fromAddress;
         this.toAddress = toAddress;
         this.scheduleDate = scheduleDate;
         this.price = price;
     }
 
-    // Getters and setters
-
+    // ✅ Getters and Setters
     public Integer getOrderServiceTypeId() {
         return orderServiceTypeId;
     }
@@ -86,20 +65,20 @@ public class OrderServiceType {
         this.orderServiceTypeId = orderServiceTypeId;
     }
 
-    public Integer getOrderId() {
-        return orderId;
+    public ServiceTypeEnum getServiceType() {
+        return serviceType;
     }
 
-    public void setOrderId(Integer orderId) {
-        this.orderId = orderId;
+    public void setServiceType(ServiceTypeEnum serviceType) {
+        this.serviceType = serviceType;
     }
 
-    public Integer getServiceId() {
-        return serviceId;
+    public Order getOrder() {
+        return order;
     }
 
-    public void setServiceId(Integer serviceId) {
-        this.serviceId = serviceId;
+    public void setOrder(Order order) {
+        this.order = order;
     }
 
     public String getFromAddress() {

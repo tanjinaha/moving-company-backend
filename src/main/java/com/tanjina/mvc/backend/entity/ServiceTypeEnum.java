@@ -5,8 +5,8 @@ package com.tanjina.mvc.backend.entity;
  * This matches the ENUM values defined in the MySQL 'servicetypes' table.
  */
 public enum ServiceTypeEnum {
-    MOVING,         // Represents a moving service
-    CLEANING,       // Represents a cleaning service
-    PACKING,        // Represents a packing service
-    CLEANING_DELUXE // Represents a deluxe cleaning service
+    MOVING,
+    CLEANING,
+    PACKING,
+    CLEANING_DELUXE
 }

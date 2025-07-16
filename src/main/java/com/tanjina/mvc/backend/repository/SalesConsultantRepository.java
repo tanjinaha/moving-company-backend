@@ -1,25 +1,24 @@
 package com.tanjina.mvc.backend.repository;  // This shows the folder/package where this file lives
 
-// This import brings in the SalesConsultant class, so we can use it here
+// Import the correct entity class
 import com.tanjina.mvc.backend.entity.SalesConsultant;
 
-// These imports bring in Spring Boot tools to talk to the database
+// Spring Data JPA and Spring Boot annotations
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-// This tells Spring Boot that this file is a "Repository"
-// A Repository is a tool that helps us work with the database
+import java.util.List;
+import java.util.Optional;
+
+// ✅ This tells Spring Boot: "This interface will help us talk to the database for SalesConsultant"
 @Repository
 public interface SalesConsultantRepository extends JpaRepository<SalesConsultant, Integer> {
 
-    // What does this do?
-    // This interface says:
-    // "I want to use Spring Boot’s built-in tools to work with SalesConsultant objects"
+    // ✅ Search for consultants by partial name (case-insensitive)
+    List<SalesConsultant> findByConsultantNameContainingIgnoreCase(String name);
 
-    // We don't need to write any code here!
-    // We automatically get useful methods like:
-    // - save()         → to save a sales consultant to the database
-    // - findById()     → to find a sales consultant by ID
-    // - findAll()      → to get a list of all sales consultants
-    // - deleteById()   → to delete a sales consultant by ID
+    // ✅ Find an existing consultant by both phone and email (must match exactly)
+    Optional<SalesConsultant> findByConsultantPhoneAndConsultantEmail(Long consultantPhone, String consultantEmail);
+
+    // ✅ We get save(), findAll(), findById(), deleteById() automatically from JpaRepository
 }

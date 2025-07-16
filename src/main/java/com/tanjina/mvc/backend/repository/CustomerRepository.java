@@ -1,27 +1,29 @@
-package com.tanjina.mvc.backend.repository;  // This shows the folder/package where this file lives
+package com.tanjina.mvc.backend.repository;
 
-// This import brings in the Customer class, so we can use it here
+// ✅ Import the Customer entity
 import com.tanjina.mvc.backend.entity.Customer;
-import java.util.List;
 
-// These imports bring in Spring Boot tools to talk to the database
+// ✅ Spring Data JPA tools
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-// This tells Spring Boot that this file is a "Repository"
-// A Repository is a tool that helps us work with the database
+import java.util.List;
+import java.util.Optional;
+
+// ✅ This tells Spring to treat this as a repository
 @Repository
 public interface CustomerRepository extends JpaRepository<Customer, Integer> {
+
+    // ✅ Custom method to search by name (used in CustomerService)
     List<Customer> findByCustomerNameContainingIgnoreCase(String name);
 
-    // What does this do?
-    // This interface says:
-    // "I want to use Spring Boot’s built-in tools to work with Customer objects"
 
-    // We don't need to write any code here!
-    // We automatically get useful methods like:
-    // - save()         → to save a customer to the database
-    // - findById()     → to find a customer by ID
-    // - findAll()      → to get a list of all customers
-    // - deleteById()   → to delete a customer by ID
+    // ✅ Custom method to find a customer using phone and email
+    Optional<Customer> findByCustomerPhoneAndCustomerEmail(Long customerPhone, String customerEmail);
+
+    // ✅ You also automatically get:
+    // - save()         → to save a customer
+    // - findAll()      → to list all customers
+    // - findById()     → to find one by ID
+    // - deleteById()   → to delete by ID
 }

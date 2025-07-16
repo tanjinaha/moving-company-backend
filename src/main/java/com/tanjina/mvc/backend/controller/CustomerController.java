@@ -1,9 +1,5 @@
-// This declares the package location of the class inside your project folders
 package com.tanjina.mvc.backend.controller;
 
-// Import all necessary libraries and annotations BEFORE usage
-
-import org.springframework.web.bind.annotation.CrossOrigin;
 import com.tanjina.mvc.backend.entity.Customer;
 import com.tanjina.mvc.backend.service.CustomerService;
 import org.springframework.http.ResponseEntity;
@@ -12,99 +8,64 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
 
-// @CrossOrigin allows React frontend (running on port 3000) to access this backend API (running on port 8080)
-// This solves browser security issues (CORS policy)
+// ✅ Allow frontend (http://localhost:5173) to call this backend (CORS policy)
 @CrossOrigin(origins = "http://localhost:5173")
 
-// @RestController tells Spring Boot: "This class handles API/web requests."
-// It will not return HTML pages — it returns data (like JSON).
+// ✅ This is a REST controller: handles HTTP requests and returns JSON
 @RestController
 
-// @RequestMapping sets the base URL for all methods in this controller.
-// This means all endpoints will start with "/customers"
+// ✅ Base URL for all methods below will be /customers
 @RequestMapping("/customers")
-public class CustomerController
-{
+public class CustomerController {
 
-    // This is a reference to our CustomerService class.
-    // We use it to access business logic (like saving or getting customers)
+    // ✅ Connects to CustomerService (business logic)
     private final CustomerService customerService;
 
-    // Constructor Injection (recommended way in Spring Boot)
-    // This constructor gives this controller access to the service layer
-    public CustomerController(CustomerService customerService)
-    {
+    // ✅ Constructor injection (Spring Boot recommended)
+    public CustomerController(CustomerService customerService) {
         this.customerService = customerService;
     }
 
-    // -----------------------------------------------------------------------
-    // POST /customers
-    // This method adds a new customer to the database.
-    // @PostMapping handles POST requests to the URL /customers
-    // @RequestBody tells Spring: "Get the customer data from the request body"
+    // ✅ POST /customers — create a new customer
     @PostMapping
-    public ResponseEntity<Customer> addCustomer(@RequestBody Customer customer)
-    {
-        Customer savedCustomer = customerService.addCustomer(customer);  // Save using service layer
-        return ResponseEntity.status(201).body(savedCustomer);  // Return response with status code 201 (Created)
+    public ResponseEntity<Customer> addCustomer(@RequestBody Customer customer) {
+        Customer savedCustomer = customerService.addCustomer(customer);
+        return ResponseEntity.status(201).body(savedCustomer);
     }
 
-    // -----------------------------------------------------------------------
-    // GET /customers
-    // This method returns a list of all customers in the database
-    // @GetMapping handles GET requests to the URL /customers
+    // ✅ GET /customers — get all customers
     @GetMapping
-    public ResponseEntity<List<Customer>> getAllCustomers()
-    {
-        List<Customer> customers = customerService.getAllCustomers();  // Get all customers from service
-        return ResponseEntity.ok(customers);  // Return response with status code 200 (OK)
+    public ResponseEntity<List<Customer>> getAllCustomers() {
+        List<Customer> customers = customerService.getAllCustomers();
+        return ResponseEntity.ok(customers);
     }
 
-    // -----------------------------------------------------------------------
-    // GET /customers/{id}
-    // This method returns a specific customer by their ID
-    // @PathVariable tells Spring: "Use the number in the URL as the customer ID"
+    // ✅ GET /customers/{id} — get a customer by ID
     @GetMapping("/{id}")
-    public ResponseEntity<Customer> getCustomerById(@PathVariable Integer id)
-    {
-        Optional<Customer> customer = customerService.getCustomerById(id);  // Try to find the customer
-
-        // If customer is found, return it with 200 OK. If not, return 404 Not Found.
+    public ResponseEntity<Customer> getCustomerById(@PathVariable Integer id) {
+        Optional<Customer> customer = customerService.getCustomerById(id);
         return customer.map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // -----------------------------------------------------------------------
-    // PUT /customers
-    // This method updates an existing customer in the database
-    // @PutMapping handles PUT requests (used for updates)
+    // ✅ PUT /customers — update an existing customer
     @PutMapping
-    public ResponseEntity<Customer> updateCustomer(@RequestBody Customer customer)
-    {
-        Customer updatedCustomer = customerService.updateCustomer(customer);  // Update using service
-        return ResponseEntity.ok(updatedCustomer);  // Return updated customer with 200 OK
+    public ResponseEntity<Customer> updateCustomer(@RequestBody Customer customer) {
+        Customer updatedCustomer = customerService.updateCustomer(customer);
+        return ResponseEntity.ok(updatedCustomer);
     }
 
-    // -----------------------------------------------------------------------
-    // DELETE /customers/{id}
-    // This method deletes a customer by their ID
-    // @DeleteMapping handles DELETE requests to the URL /customers/{id}
+    // ✅ DELETE /customers/{id} — delete customer by ID
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCustomer(@PathVariable Integer id)
-    {
-        customerService.deleteCustomer(id);  // Ask the service to delete by ID
-        return ResponseEntity.noContent().build();  // Return 204 No Content (success but nothing to return)
+    public ResponseEntity<Void> deleteCustomer(@PathVariable Integer id) {
+        customerService.deleteCustomer(id);
+        return ResponseEntity.noContent().build();
     }
 
-    // -----------------------------------------------------------------------
-    // GET /customers/search?name=mo
-    // This lets the frontend search customers by name (like "mo" or "Ali")
+    // ✅ GET /customers/search?name=Ali — search customers by name
     @GetMapping("/search")
-    public ResponseEntity<List<Customer>> searchCustomersByName(@RequestParam String name)
-    {
+    public ResponseEntity<List<Customer>> searchCustomersByName(@RequestParam String name) {
         List<Customer> result = customerService.searchCustomersByName(name);
         return ResponseEntity.ok(result);
     }
-
-
 }

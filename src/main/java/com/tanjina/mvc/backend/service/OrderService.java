@@ -1,99 +1,121 @@
 package com.tanjina.mvc.backend.service;
 
-import com.tanjina.mvc.backend.dto.OrderDetailsDTO; // New import: DTO class to transfer combined order info
-import com.tanjina.mvc.backend.entity.Order;
+import com.tanjina.mvc.backend.dto.CreateOrderDTO;
+import com.tanjina.mvc.backend.dto.OrderDetailsDTO;
 import com.tanjina.mvc.backend.entity.Customer;
+import com.tanjina.mvc.backend.entity.Order;
+import com.tanjina.mvc.backend.entity.OrderServiceType;
 import com.tanjina.mvc.backend.entity.SalesConsultant;
-import com.tanjina.mvc.backend.repository.OrderRepository;
+import com.tanjina.mvc.backend.entity.ServiceTypeEnum;
 import com.tanjina.mvc.backend.repository.CustomerRepository;
+import com.tanjina.mvc.backend.repository.OrderRepository;
+import com.tanjina.mvc.backend.repository.OrderServiceTypeRepository;
 import com.tanjina.mvc.backend.repository.SalesConsultantRepository;
-
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-@Service  // Marks this class as a Spring service (business logic layer)
+@Service
 public class OrderService {
 
-    // Repositories to access data from database tables
     private final OrderRepository orderRepository;
     private final CustomerRepository customerRepository;
     private final SalesConsultantRepository salesConsultantRepository;
+    private final OrderServiceTypeRepository orderServiceTypeRepository;
 
-    // Constructor injection to provide repositories — promotes loose coupling & easier testing
     public OrderService(OrderRepository orderRepository,
                         CustomerRepository customerRepository,
-                        SalesConsultantRepository salesConsultantRepository) {
+                        SalesConsultantRepository salesConsultantRepository,
+                        OrderServiceTypeRepository orderServiceTypeRepository) {
         this.orderRepository = orderRepository;
         this.customerRepository = customerRepository;
         this.salesConsultantRepository = salesConsultantRepository;
+        this.orderServiceTypeRepository = orderServiceTypeRepository;
     }
 
-    // ---- Basic CRUD operations for Order entity ----
-
-    // Add a new order and save to DB
+    // Save a basic order
     public Order addOrder(Order order) {
         return orderRepository.save(order);
     }
 
-    // Retrieve all orders from DB
+    // Get all orders
     public List<Order> getAllOrders() {
         return orderRepository.findAll();
     }
 
-    // Retrieve an order by ID, wrapped in Optional in case it doesn't exist
+    // Get one order by ID
     public Optional<Order> getOrderById(Integer id) {
         return orderRepository.findById(id);
     }
 
-    // Update an order, or create if it doesn't exist yet
+    // Update an order
     public Order updateOrder(Order order) {
         return orderRepository.save(order);
     }
 
-    // Delete an order by its ID
+    // Delete order by ID
     public void deleteOrder(Integer id) {
         orderRepository.deleteById(id);
     }
 
-    // ---- New: Method using OrderDetailsDTO ----
-
-    /**
-     * This method fetches all orders and "joins" related information from Customer and SalesConsultant.
-     *
-     * Why use DTO here?
-     * - Because the frontend UI usually needs combined info (order + customer name + consultant name)
-     * - Instead of sending raw Order objects with only IDs, we send a friendly combined view.
-     *
-     * How does it work?
-     * - We fetch all orders from the order repository.
-     * - For each order, we look up the related Customer and SalesConsultant by their IDs.
-     * - If customer or consultant is missing, we provide a fallback string ("Unknown Customer" / "Unknown Consultant").
-     * - We create a new OrderDetailsDTO instance containing:
-     *      • orderId from Order
-     *      • customerName from Customer
-     *      • consultantName from SalesConsultant
-     *      • note from Order
-     * - Finally, we collect all DTOs into a list and return it.
-     */
+    // Get detailed list of orders with customer & consultant names
     public List<OrderDetailsDTO> getOrderDetails() {
         List<Order> orders = orderRepository.findAll();
 
         return orders.stream().map(order -> {
-            // Look up customer by ID
             Optional<Customer> customerOpt = customerRepository.findById(order.getCustomerId());
-            // If found, get customerName, else fallback to "Unknown Customer"
             String customerName = customerOpt.map(Customer::getCustomerName).orElse("Unknown Customer");
 
-            // Look up consultant by ID
             Optional<SalesConsultant> consultantOpt = salesConsultantRepository.findById(order.getConsultantId());
-            // If found, get consultantName, else fallback to "Unknown Consultant"
             String consultantName = consultantOpt.map(SalesConsultant::getConsultantName).orElse("Unknown Consultant");
 
-            // Create and return DTO combining all needed data
             return new OrderDetailsDTO(order.getOrderId(), customerName, consultantName, order.getNote());
         }).collect(Collectors.toList());
+    }
+
+    // ✅ MAIN method to create a full order with customer, consultant, and service info
+    public Order createOrderFromDTO(CreateOrderDTO dto) {
+        // 1️⃣ Find or create customer
+        Customer customer = customerRepository
+                .findByCustomerPhoneAndCustomerEmail(Long.parseLong(dto.getCustomerPhone()), dto.getCustomerEmail())
+                .orElseGet(() -> {
+                    Customer newCustomer = new Customer();
+                    newCustomer.setCustomerName(dto.getCustomerName());
+                    newCustomer.setCustomerPhone(Long.parseLong(dto.getCustomerPhone()));
+                    newCustomer.setCustomerEmail(dto.getCustomerEmail());
+                    return customerRepository.save(newCustomer);
+                });
+
+        // 2️⃣ Find or create consultant
+        SalesConsultant consultant = salesConsultantRepository
+                .findByConsultantPhoneAndConsultantEmail(Long.parseLong(dto.getConsultantPhone()), dto.getConsultantEmail())
+                .orElseGet(() -> {
+                    SalesConsultant newConsultant = new SalesConsultant();
+                    newConsultant.setConsultantName(dto.getConsultantName());
+                    newConsultant.setConsultantPhone(Long.parseLong(dto.getConsultantPhone()));
+                    newConsultant.setConsultantEmail(dto.getConsultantEmail());
+                    return salesConsultantRepository.save(newConsultant);
+                });
+
+        // 3️⃣ Save the Order
+        Order order = new Order();
+        order.setCustomerId(customer.getCustomerId());
+        order.setConsultantId(consultant.getConsultantId());
+        order.setNote(dto.getNote());
+        Order savedOrder = orderRepository.save(order);
+
+        // 4️⃣ Save OrderServiceType using ENUM (✔ FIXED)
+        OrderServiceType orderService = new OrderServiceType();
+        orderService.setOrder(savedOrder);
+        orderService.setServiceType(ServiceTypeEnum.valueOf(dto.getServiceType())); // ✅ FIXED enum usage
+        orderService.setFromAddress(dto.getFromAddress());
+        orderService.setToAddress(dto.getToAddress());
+        orderService.setScheduleDate(dto.getScheduleDate());
+        orderService.setPrice(dto.getPrice());
+        orderServiceTypeRepository.save(orderService);
+
+        return savedOrder;
     }
 }
