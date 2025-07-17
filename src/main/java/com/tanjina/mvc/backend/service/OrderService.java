@@ -2,15 +2,8 @@ package com.tanjina.mvc.backend.service;
 
 import com.tanjina.mvc.backend.dto.CreateOrderDTO;
 import com.tanjina.mvc.backend.dto.OrderDetailsDTO;
-import com.tanjina.mvc.backend.entity.Customer;
-import com.tanjina.mvc.backend.entity.Order;
-import com.tanjina.mvc.backend.entity.OrderServiceType;
-import com.tanjina.mvc.backend.entity.SalesConsultant;
-import com.tanjina.mvc.backend.entity.ServiceTypeEnum;
-import com.tanjina.mvc.backend.repository.CustomerRepository;
-import com.tanjina.mvc.backend.repository.OrderRepository;
-import com.tanjina.mvc.backend.repository.OrderServiceTypeRepository;
-import com.tanjina.mvc.backend.repository.SalesConsultantRepository;
+import com.tanjina.mvc.backend.entity.*;
+import com.tanjina.mvc.backend.repository.*;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,47 +13,52 @@ import java.util.stream.Collectors;
 @Service
 public class OrderService {
 
+    // ✅ Repositories used to interact with the database
     private final OrderRepository orderRepository;
     private final CustomerRepository customerRepository;
     private final SalesConsultantRepository salesConsultantRepository;
     private final OrderServiceTypeRepository orderServiceTypeRepository;
+    private final ServiceTypeRepository serviceTypeRepository;  // ✅ Newly added
 
+    // ✅ Constructor injection (Spring will provide the repositories automatically)
     public OrderService(OrderRepository orderRepository,
                         CustomerRepository customerRepository,
                         SalesConsultantRepository salesConsultantRepository,
-                        OrderServiceTypeRepository orderServiceTypeRepository) {
+                        OrderServiceTypeRepository orderServiceTypeRepository,
+                        ServiceTypeRepository serviceTypeRepository) {
         this.orderRepository = orderRepository;
         this.customerRepository = customerRepository;
         this.salesConsultantRepository = salesConsultantRepository;
         this.orderServiceTypeRepository = orderServiceTypeRepository;
+        this.serviceTypeRepository = serviceTypeRepository;  // ✅ Store the provided repository
     }
 
-    // Save a basic order
+    // ✅ Save a basic order
     public Order addOrder(Order order) {
         return orderRepository.save(order);
     }
 
-    // Get all orders
+    // ✅ Get all orders
     public List<Order> getAllOrders() {
         return orderRepository.findAll();
     }
 
-    // Get one order by ID
+    // ✅ Get one order by ID
     public Optional<Order> getOrderById(Integer id) {
         return orderRepository.findById(id);
     }
 
-    // Update an order
+    // ✅ Update an order
     public Order updateOrder(Order order) {
         return orderRepository.save(order);
     }
 
-    // Delete order by ID
+    // ✅ Delete order by ID
     public void deleteOrder(Integer id) {
         orderRepository.deleteById(id);
     }
 
-    // Get detailed list of orders with customer & consultant names
+    // ✅ Get detailed list of orders with customer & consultant names
     public List<OrderDetailsDTO> getOrderDetails() {
         List<Order> orders = orderRepository.findAll();
 
@@ -75,9 +73,9 @@ public class OrderService {
         }).collect(Collectors.toList());
     }
 
-    // ✅ MAIN method to create a full order with customer, consultant, and service info
+    // ✅ MAIN METHOD — Create a full order with all required info
     public Order createOrderFromDTO(CreateOrderDTO dto) {
-        // 1️⃣ Find or create customer
+        // 1️⃣ Create or reuse existing customer
         Customer customer = customerRepository
                 .findByCustomerPhoneAndCustomerEmail(Long.parseLong(dto.getCustomerPhone()), dto.getCustomerEmail())
                 .orElseGet(() -> {
@@ -88,7 +86,7 @@ public class OrderService {
                     return customerRepository.save(newCustomer);
                 });
 
-        // 2️⃣ Find or create consultant
+        // 2️⃣ Create or reuse existing consultant
         SalesConsultant consultant = salesConsultantRepository
                 .findByConsultantPhoneAndConsultantEmail(Long.parseLong(dto.getConsultantPhone()), dto.getConsultantEmail())
                 .orElseGet(() -> {
@@ -106,14 +104,21 @@ public class OrderService {
         order.setNote(dto.getNote());
         Order savedOrder = orderRepository.save(order);
 
-        // 4️⃣ Save OrderServiceType using ENUM (✔ FIXED)
+        // 4️⃣ Save service details in OrderServiceType
         OrderServiceType orderService = new OrderServiceType();
         orderService.setOrder(savedOrder);
-        orderService.setServiceType(ServiceTypeEnum.valueOf(dto.getServiceType())); // ✅ FIXED enum usage
         orderService.setFromAddress(dto.getFromAddress());
         orderService.setToAddress(dto.getToAddress());
         orderService.setScheduleDate(dto.getScheduleDate());
         orderService.setPrice(dto.getPrice());
+
+        // ✅ Now fetch the ServiceType entity using the serviceId
+        Integer serviceId = dto.getServiceId();
+        ServiceType serviceType = serviceTypeRepository.findById(serviceId)
+                .orElseThrow(() -> new RuntimeException("Invalid service type ID: " + serviceId));
+        orderService.setServiceType(serviceType);
+
+        // ✅ Save the service entry
         orderServiceTypeRepository.save(orderService);
 
         return savedOrder;

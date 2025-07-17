@@ -3,25 +3,40 @@ package com.tanjina.mvc.backend.dto;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/**
+ * This class collects all data needed to create a full order.
+ * It is used when frontend sends the form data to the backend.
+ */
 public class CreateOrderDTO {
+
+    // ✅ Customer information (to create or find the customer)
     private String customerName;
     private String customerPhone;
     private String customerEmail;
 
+    // ✅ Consultant information (to create or find the sales consultant)
     private String consultantName;
     private String consultantPhone;
     private String consultantEmail;
 
-    private String serviceType;
+    // ✅ This holds the selected service ID (MOVING, CLEANING, etc.)
+    // It matches service_id in the servicetypes table
+    private Integer serviceId;
+
+    // ✅ Addresses for the service
     private String fromAddress;
     private String toAddress;
 
+    // ✅ Scheduled date for when the service will happen
     private LocalDate scheduleDate;
+
+    // ✅ Total price of the service
     private BigDecimal price;
 
+    // ✅ Optional note about the order (ex: "Urgent", "Needs packing")
     private String note;
 
-    // Getters and setters for all fields
+    // -------- Getters and Setters (to read/write values) --------
 
     public String getCustomerName() {
         return customerName;
@@ -71,12 +86,12 @@ public class CreateOrderDTO {
         this.consultantEmail = consultantEmail;
     }
 
-    public String getServiceType() {
-        return serviceType;
+    public Integer getServiceId() {
+        return serviceId;
     }
 
-    public void setServiceType(String serviceType) {
-        this.serviceType = serviceType;
+    public void setServiceId(Integer serviceId) {
+        this.serviceId = serviceId;
     }
 
     public String getFromAddress() {

@@ -1,15 +1,10 @@
 package com.tanjina.mvc.backend.entity;
 
-import com.tanjina.mvc.backend.entity.ServiceTypeEnum; // ✅ import the enum
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-/**
- * This entity represents one service included in an order.
- * It connects to the Order table and stores the type of service (as enum), address, date, and price.
- */
 @Entity
 @Table(name = "orderservicetypes")
 public class OrderServiceType {
@@ -19,12 +14,10 @@ public class OrderServiceType {
     @Column(name = "orderservicetype_id")
     private Integer orderServiceTypeId;
 
-    // ✅ Use enum to represent the service type (MOVING, CLEANING, etc.)
-    @Enumerated(EnumType.STRING)
-    @Column(name = "service_type", nullable = false)
-    private ServiceTypeEnum serviceType;
+    @ManyToOne
+    @JoinColumn(name = "service_id", nullable = false)
+    private ServiceType serviceType;
 
-    // ✅ Link to the Order entity
     @ManyToOne
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
@@ -41,11 +34,9 @@ public class OrderServiceType {
     @Column(name = "price", precision = 10, scale = 2)
     private BigDecimal price;
 
-    // ✅ Default constructor
     public OrderServiceType() {}
 
-    // ✅ Constructor with all fields (uses ServiceTypeEnum)
-    public OrderServiceType(Integer orderServiceTypeId, ServiceTypeEnum serviceType, Order order,
+    public OrderServiceType(Integer orderServiceTypeId, ServiceType serviceType, Order order,
                             String fromAddress, String toAddress, LocalDate scheduleDate, BigDecimal price) {
         this.orderServiceTypeId = orderServiceTypeId;
         this.serviceType = serviceType;
@@ -56,7 +47,6 @@ public class OrderServiceType {
         this.price = price;
     }
 
-    // ✅ Getters and Setters
     public Integer getOrderServiceTypeId() {
         return orderServiceTypeId;
     }
@@ -65,11 +55,11 @@ public class OrderServiceType {
         this.orderServiceTypeId = orderServiceTypeId;
     }
 
-    public ServiceTypeEnum getServiceType() {
+    public ServiceType getServiceType() {
         return serviceType;
     }
 
-    public void setServiceType(ServiceTypeEnum serviceType) {
+    public void setServiceType(ServiceType serviceType) {
         this.serviceType = serviceType;
     }
 
