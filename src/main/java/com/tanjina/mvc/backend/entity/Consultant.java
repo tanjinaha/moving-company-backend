@@ -3,11 +3,12 @@ package com.tanjina.mvc.backend.entity;
 import jakarta.persistence.*;
 
 /**
- * Entity class for salesConsultants table.
+ * Entity class for Consultants table.
  */
 @Entity
-@Table(name = "salesConsultants")
-public class SalesConsultant {
+@Table(name = "consultants")
+public class Consultant
+{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,9 +27,9 @@ public class SalesConsultant {
     // Note: consultant_role is skipped as requested
 
     // Constructors
-    public SalesConsultant() {}
+    public Consultant() {}
 
-    public SalesConsultant(Integer consultantId, String consultantName, Long consultantPhone, String consultantEmail) {
+    public Consultant(Integer consultantId, String consultantName, Long consultantPhone, String consultantEmail) {
         this.consultantId = consultantId;
         this.consultantName = consultantName;
         this.consultantPhone = consultantPhone;

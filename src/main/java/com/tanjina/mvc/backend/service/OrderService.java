@@ -13,52 +13,45 @@ import java.util.stream.Collectors;
 @Service
 public class OrderService {
 
-    // ✅ Repositories used to interact with the database
     private final OrderRepository orderRepository;
     private final CustomerRepository customerRepository;
-    private final SalesConsultantRepository salesConsultantRepository;
+    private final ConsultantRepository salesConsultantRepository;
     private final OrderServiceTypeRepository orderServiceTypeRepository;
-    private final ServiceTypeRepository serviceTypeRepository;  // ✅ Newly added
+    private final ServiceTypeRepository serviceTypeRepository;
 
-    // ✅ Constructor injection (Spring will provide the repositories automatically)
     public OrderService(OrderRepository orderRepository,
                         CustomerRepository customerRepository,
-                        SalesConsultantRepository salesConsultantRepository,
+                        ConsultantRepository salesConsultantRepository,
                         OrderServiceTypeRepository orderServiceTypeRepository,
                         ServiceTypeRepository serviceTypeRepository) {
         this.orderRepository = orderRepository;
         this.customerRepository = customerRepository;
         this.salesConsultantRepository = salesConsultantRepository;
         this.orderServiceTypeRepository = orderServiceTypeRepository;
-        this.serviceTypeRepository = serviceTypeRepository;  // ✅ Store the provided repository
+        this.serviceTypeRepository = serviceTypeRepository;
     }
 
-    // ✅ Save a basic order
     public Order addOrder(Order order) {
         return orderRepository.save(order);
     }
 
-    // ✅ Get all orders
     public List<Order> getAllOrders() {
         return orderRepository.findAll();
     }
 
-    // ✅ Get one order by ID
     public Optional<Order> getOrderById(Integer id) {
         return orderRepository.findById(id);
     }
 
-    // ✅ Update an order
     public Order updateOrder(Order order) {
         return orderRepository.save(order);
     }
 
-    // ✅ Delete order by ID
     public void deleteOrder(Integer id) {
         orderRepository.deleteById(id);
     }
 
-    // ✅ Get detailed list of orders with customer & consultant names
+    // ✅ Return order details with customer, consultant, and service name
     public List<OrderDetailsDTO> getOrderDetails() {
         List<Order> orders = orderRepository.findAll();
 
@@ -66,45 +59,82 @@ public class OrderService {
             Optional<Customer> customerOpt = customerRepository.findById(order.getCustomerId());
             String customerName = customerOpt.map(Customer::getCustomerName).orElse("Unknown Customer");
 
-            Optional<SalesConsultant> consultantOpt = salesConsultantRepository.findById(order.getConsultantId());
-            String consultantName = consultantOpt.map(SalesConsultant::getConsultantName).orElse("Unknown Consultant");
+            Optional<Consultant> consultantOpt = salesConsultantRepository.findById(order.getConsultantId());
+            String consultantName = consultantOpt.map(Consultant::getConsultantName).orElse("Unknown Consultant");
 
-            return new OrderDetailsDTO(order.getOrderId(), customerName, consultantName, order.getNote());
+            OrderServiceType orderServiceType = order.getOrderServiceTypes()
+                    .stream()
+                    .findFirst()
+                    .orElse(null);
+
+            if (orderServiceType == null) {
+                return new OrderDetailsDTO(
+                        order.getOrderId(),
+                        customerName,
+                        consultantName,
+                        order.getNote(),
+                        "No service",
+                        "-", "-", null, null
+                );
+            }
+
+            return new OrderDetailsDTO(
+                    order.getOrderId(),
+                    customerName,
+                    consultantName,
+                    order.getNote(),
+                    orderServiceType.getServiceType() != null ? orderServiceType.getServiceType().getServiceName() : "Unknown Service",
+                    orderServiceType.getFromAddress(),
+                    orderServiceType.getToAddress(),
+                    orderServiceType.getScheduleDate(),
+                    orderServiceType.getPrice()
+            );
         }).collect(Collectors.toList());
     }
 
-    // ✅ MAIN METHOD — Create a full order with all required info
+    // ✅ Handles new order creation with customer + consultant reuse
     public Order createOrderFromDTO(CreateOrderDTO dto) {
-        // 1️⃣ Create or reuse existing customer
-        Customer customer = customerRepository
-                .findByCustomerPhoneAndCustomerEmail(Long.parseLong(dto.getCustomerPhone()), dto.getCustomerEmail())
-                .orElseGet(() -> {
-                    Customer newCustomer = new Customer();
-                    newCustomer.setCustomerName(dto.getCustomerName());
-                    newCustomer.setCustomerPhone(Long.parseLong(dto.getCustomerPhone()));
-                    newCustomer.setCustomerEmail(dto.getCustomerEmail());
-                    return customerRepository.save(newCustomer);
-                });
+        // 🚨 Required field checks
+        if (dto.getServiceId() == null) throw new RuntimeException("❌ Service type is required.");
+        if (dto.getFromAddress() == null || dto.getFromAddress().isEmpty()) throw new RuntimeException("❌ From address is required.");
+        if (dto.getToAddress() == null || dto.getToAddress().isEmpty()) throw new RuntimeException("❌ To address is required.");
+        if (dto.getScheduleDate() == null) throw new RuntimeException("❌ Schedule date is required.");
+        if (dto.getPrice() == null || dto.getPrice().compareTo(java.math.BigDecimal.ZERO) <= 0)
+            throw new RuntimeException("❌ Price must be greater than 0.");
+        if (dto.getNote() == null || dto.getNote().isEmpty()) throw new RuntimeException("❌ Note is required.");
 
-        // 2️⃣ Create or reuse existing consultant
-        SalesConsultant consultant = salesConsultantRepository
-                .findByConsultantPhoneAndConsultantEmail(Long.parseLong(dto.getConsultantPhone()), dto.getConsultantEmail())
-                .orElseGet(() -> {
-                    SalesConsultant newConsultant = new SalesConsultant();
-                    newConsultant.setConsultantName(dto.getConsultantName());
-                    newConsultant.setConsultantPhone(Long.parseLong(dto.getConsultantPhone()));
-                    newConsultant.setConsultantEmail(dto.getConsultantEmail());
-                    return salesConsultantRepository.save(newConsultant);
-                });
+        // ✅ 1. Reuse or create customer
+        Optional<Customer> existingCustomer = customerRepository
+                .findByCustomerPhoneAndCustomerEmail(Long.parseLong(dto.getCustomerPhone()), dto.getCustomerEmail());
 
-        // 3️⃣ Save the Order
+        Customer customer = existingCustomer.orElseGet(() -> {
+            Customer newCustomer = new Customer();
+            newCustomer.setCustomerName(dto.getCustomerName());
+            newCustomer.setCustomerPhone(Long.parseLong(dto.getCustomerPhone()));
+            newCustomer.setCustomerEmail(dto.getCustomerEmail());
+            return customerRepository.save(newCustomer);
+        });
+
+        // ✅ 2. Reuse or create consultant
+        Optional<Consultant> existingConsultant = salesConsultantRepository
+                .findByConsultantPhoneAndConsultantEmail(Long.parseLong(dto.getConsultantPhone()), dto.getConsultantEmail());
+
+        Consultant consultant = existingConsultant.orElseGet(() -> {
+            Consultant newConsultant = new Consultant();
+            newConsultant.setConsultantName(dto.getConsultantName());
+            newConsultant.setConsultantPhone(Long.parseLong(dto.getConsultantPhone()));
+            newConsultant.setConsultantEmail(dto.getConsultantEmail());
+            return salesConsultantRepository.save(newConsultant);
+        });
+
+        // ✅ 3. Create new order
         Order order = new Order();
         order.setCustomerId(customer.getCustomerId());
         order.setConsultantId(consultant.getConsultantId());
         order.setNote(dto.getNote());
         Order savedOrder = orderRepository.save(order);
 
-        // 4️⃣ Save service details in OrderServiceType
+        // ✅ 4. Create and save service
         OrderServiceType orderService = new OrderServiceType();
         orderService.setOrder(savedOrder);
         orderService.setFromAddress(dto.getFromAddress());
@@ -112,13 +142,10 @@ public class OrderService {
         orderService.setScheduleDate(dto.getScheduleDate());
         orderService.setPrice(dto.getPrice());
 
-        // ✅ Now fetch the ServiceType entity using the serviceId
-        Integer serviceId = dto.getServiceId();
-        ServiceType serviceType = serviceTypeRepository.findById(serviceId)
-                .orElseThrow(() -> new RuntimeException("Invalid service type ID: " + serviceId));
+        ServiceType serviceType = serviceTypeRepository.findById(dto.getServiceId())
+                .orElseThrow(() -> new RuntimeException("Invalid service type ID: " + dto.getServiceId()));
         orderService.setServiceType(serviceType);
 
-        // ✅ Save the service entry
         orderServiceTypeRepository.save(orderService);
 
         return savedOrder;
