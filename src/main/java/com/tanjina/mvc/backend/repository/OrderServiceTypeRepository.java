@@ -1,19 +1,14 @@
-package com.tanjina.mvc.backend.repository;  // Package location
+package com.tanjina.mvc.backend.repository;
 
-import com.tanjina.mvc.backend.entity.OrderServiceType;  // Import entity
-
+import com.tanjina.mvc.backend.entity.Order;
+import com.tanjina.mvc.backend.entity.OrderServiceType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import java.util.Optional;
 
-/**
- * Repository interface for OrderServiceType entity.
- *
- * Extends JpaRepository to provide built-in CRUD operations on the orderservicetypes table.
- * No implementation needed; Spring Data JPA provides methods like save, findById, findAll, deleteById.
- */
 @Repository
 public interface OrderServiceTypeRepository extends JpaRepository<OrderServiceType, Integer> {
 
-    // You can add custom query methods here if needed.
-    // Example: List<OrderServiceType> findByOrderId(Integer orderId);
+    // ✅ This will fix your red underline
+    Optional<OrderServiceType> findByOrder(Order order);
 }

@@ -88,26 +88,19 @@ public class OrderController
 
     /// ✅ This version will match PUT /orders/{id}
     @PutMapping("/{id}")
-    public ResponseEntity<Order> updateOrder(
+    public ResponseEntity<String> updateOrderDetails(
             @PathVariable Integer id,
-            @RequestBody Order order)
-    {
+            @RequestBody OrderDetailsDTO dto) {
 
-        // Step 1: Check if order exists
-        Optional<Order> optionalOrder = orderService.getOrderById(id);
-        if (optionalOrder.isEmpty())
-        {
-            return ResponseEntity.notFound().build(); // 404 Not Found if order doesn't exist
+        try {
+            orderService.updateOrderDetailsFromDTO(id, dto);  // 📦 Send full DTO to service
+            return ResponseEntity.ok("✅ Order updated successfully");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("❌ Error: " + e.getMessage());
         }
-
-        // Step 2: Get existing order and update only the note
-        Order existingOrder = optionalOrder.get();
-        existingOrder.setNote(order.getNote());
-
-        // Step 3: Save updated order
-        Order updatedOrder = orderService.updateOrder(existingOrder);
-        return ResponseEntity.ok(updatedOrder); // 200 OK with updated order
     }
+
 
 
     // DELETE /orders/{id}
@@ -118,4 +111,21 @@ public class OrderController
         orderService.deleteOrder(id);
         return ResponseEntity.noContent().build();  // HTTP 204 No Content
     }
+
+    // 🔍 Search orders by customer name
+    // 🔍 GET /orders/search?customerName=Tanjina
+    @GetMapping("/search")
+    public ResponseEntity<List<OrderDetailsDTO>> searchOrdersByCustomerName(
+            @RequestParam String customerName) {
+
+        List<OrderDetailsDTO> results = orderService.findOrdersByCustomerName(customerName);
+
+        if (results.isEmpty()) {
+            return ResponseEntity.notFound().build();  // 🔴 404 if nothing found
+        }
+
+        return ResponseEntity.ok(results);  // ✅ 200 OK with matching orders
+    }
+
+
 }

@@ -104,8 +104,13 @@ public class OrderService {
         if (dto.getNote() == null || dto.getNote().isEmpty()) throw new RuntimeException("❌ Note is required.");
 
         // ✅ 1. Reuse or create customer
-        Optional<Customer> existingCustomer = customerRepository
-                .findByCustomerPhoneAndCustomerEmail(Long.parseLong(dto.getCustomerPhone()), dto.getCustomerEmail());
+        Optional<Customer> existingCustomer = customerRepository.findMatchingCustomer(
+                dto.getCustomerName(),
+                dto.getCustomerEmail(),
+                Long.parseLong(dto.getCustomerPhone())  // ✅ Convert string to number
+        );
+
+
 
         Customer customer = existingCustomer.orElseGet(() -> {
             Customer newCustomer = new Customer();
@@ -150,4 +155,67 @@ public class OrderService {
 
         return savedOrder;
     }
+    // ✅ This updates an existing order's service and other details
+    public void updateOrderDetailsFromDTO(Integer orderId, OrderDetailsDTO dto) {
+
+        // 🔍 Step 1: Find the order by ID
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        // ✏️ Save note if changed
+        if (dto.getNote() != null) {
+            order.setNote(dto.getNote());
+            orderRepository.save(order);
+        }
+
+        // 🔍 Step 2: Find the related service row
+        OrderServiceType orderService = orderServiceTypeRepository.findByOrder(order)
+                .orElseThrow(() -> new RuntimeException("OrderServiceType not found for orderId: " + orderId));
+
+        // 🧭 Save service type if changed
+        if (dto.getServiceId() != null) {
+            ServiceType serviceType = serviceTypeRepository.findById(dto.getServiceId())
+                    .orElseThrow(() -> new RuntimeException("Service type not found: " + dto.getServiceId()));
+            orderService.setServiceType(serviceType);
+            orderServiceTypeRepository.save(orderService);
+        }
+
+        // 🏠 Save from address if changed
+        if (dto.getFromAddress() != null) {
+            orderService.setFromAddress(dto.getFromAddress());
+            orderServiceTypeRepository.save(orderService);
+        }
+
+        // 🏡 Save to address if changed
+        if (dto.getToAddress() != null) {
+            orderService.setToAddress(dto.getToAddress());
+            orderServiceTypeRepository.save(orderService);
+        }
+
+        // 📅 Save schedule date if changed
+        if (dto.getScheduleDate() != null) {
+            orderService.setScheduleDate(dto.getScheduleDate());
+            orderServiceTypeRepository.save(orderService);
+        }
+
+        // 💰 Save price if changed
+        if (dto.getPrice() != null) {
+            orderService.setPrice(dto.getPrice());
+            orderServiceTypeRepository.save(orderService);
+        }
+    }
+
+
+    // 🔍 This method finds all orders that match a customer's name (case-insensitive)
+    public List<OrderDetailsDTO> findOrdersByCustomerName(String customerName) {
+        // 1. Get all order details
+        List<OrderDetailsDTO> allOrders = getOrderDetails();
+
+        // 2. Filter by name (case-insensitive match)
+        return allOrders.stream()
+                .filter(order -> order.getCustomerName() != null &&
+                        order.getCustomerName().toLowerCase().contains(customerName.toLowerCase()))
+                .collect(java.util.stream.Collectors.toList());
+    }
+
 }

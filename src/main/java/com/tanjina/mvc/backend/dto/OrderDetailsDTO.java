@@ -22,6 +22,8 @@ public class OrderDetailsDTO {
     private LocalDate scheduleDate;
     private BigDecimal price;
 
+    private Integer serviceId;
+
     // ✅ Default constructor (needed by Spring for deserialization)
     public OrderDetailsDTO() {}
 
@@ -112,5 +114,13 @@ public class OrderDetailsDTO {
 
     public void setPrice(BigDecimal price) {
         this.price = price;
+    }
+
+    public Integer getServiceId() {
+        return serviceId;
+    }
+
+    public void setServiceId(Integer serviceId) {
+        this.serviceId = serviceId;
     }
 }
