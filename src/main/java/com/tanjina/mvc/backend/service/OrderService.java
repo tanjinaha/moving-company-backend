@@ -10,6 +10,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import java.util.Map;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
 @Service
 public class OrderService {
 
@@ -155,54 +159,51 @@ public class OrderService {
 
         return savedOrder;
     }
-    // ✅ This updates an existing order's service and other details
     public void updateOrderDetailsFromDTO(Integer orderId, OrderDetailsDTO dto) {
 
-        // 🔍 Step 1: Find the order by ID
+        // Step 1: Find the order by ID
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        // ✏️ Save note if changed
+        // Step 2: Save note if changed
         if (dto.getNote() != null) {
             order.setNote(dto.getNote());
             orderRepository.save(order);
         }
 
-        // 🔍 Step 2: Find the related service row
-        OrderServiceType orderService = orderServiceTypeRepository.findByOrder(order)
-                .orElseThrow(() -> new RuntimeException("OrderServiceType not found for orderId: " + orderId));
+        // Step 3: Find all service rows linked to this order
+        List<OrderServiceType> orderServices = orderServiceTypeRepository.findAllByOrder(order);
 
-        // 🧭 Save service type if changed
+        if (orderServices.isEmpty()) {
+            throw new RuntimeException("No OrderServiceType found for orderId: " + orderId);
+        }
+
+        // For simplicity, update only the first service linked to the order
+        OrderServiceType orderService = orderServices.get(0);
+
+        // Step 4: Update service type if changed
         if (dto.getServiceId() != null) {
             ServiceType serviceType = serviceTypeRepository.findById(dto.getServiceId())
                     .orElseThrow(() -> new RuntimeException("Service type not found: " + dto.getServiceId()));
             orderService.setServiceType(serviceType);
-            orderServiceTypeRepository.save(orderService);
         }
 
-        // 🏠 Save from address if changed
+        // Step 5: Update other fields if changed
         if (dto.getFromAddress() != null) {
             orderService.setFromAddress(dto.getFromAddress());
-            orderServiceTypeRepository.save(orderService);
         }
-
-        // 🏡 Save to address if changed
         if (dto.getToAddress() != null) {
             orderService.setToAddress(dto.getToAddress());
-            orderServiceTypeRepository.save(orderService);
         }
-
-        // 📅 Save schedule date if changed
         if (dto.getScheduleDate() != null) {
             orderService.setScheduleDate(dto.getScheduleDate());
-            orderServiceTypeRepository.save(orderService);
         }
-
-        // 💰 Save price if changed
         if (dto.getPrice() != null) {
             orderService.setPrice(dto.getPrice());
-            orderServiceTypeRepository.save(orderService);
         }
+
+        // Step 6: Save the updated service
+        orderServiceTypeRepository.save(orderService);
     }
 
 
@@ -217,5 +218,67 @@ public class OrderService {
                         order.getCustomerName().toLowerCase().contains(customerName.toLowerCase()))
                 .collect(java.util.stream.Collectors.toList());
     }
+
+    public void patchOrder(Integer orderId, Map<String, Object> updates) {
+        // 1. Find the order by ID
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        // 2. Find all services linked to this order
+        List<OrderServiceType> orderServices = orderServiceTypeRepository.findAllByOrder(order);
+
+        if (orderServices.isEmpty()) {
+            throw new RuntimeException("No OrderServiceType found for orderId: " + orderId);
+        }
+
+        // 3. For simplicity, patch only the first linked service
+        OrderServiceType orderService = orderServices.get(0);
+
+        // 4. Update order note if present
+        if (updates.containsKey("note")) {
+            order.setNote((String) updates.get("note"));
+            orderRepository.save(order);
+        }
+
+        // 5. Update service type if present
+        if (updates.containsKey("serviceId")) {
+            Integer serviceId = (Integer) updates.get("serviceId");
+            ServiceType serviceType = serviceTypeRepository.findById(serviceId)
+                    .orElseThrow(() -> new RuntimeException("Service type not found: " + serviceId));
+            orderService.setServiceType(serviceType);
+        }
+
+        // 6. Update other fields if present
+        if (updates.containsKey("fromAddress")) {
+            orderService.setFromAddress((String) updates.get("fromAddress"));
+        }
+        if (updates.containsKey("toAddress")) {
+            orderService.setToAddress((String) updates.get("toAddress"));
+        }
+        if (updates.containsKey("scheduleDate")) {
+            orderService.setScheduleDate(LocalDate.parse((String) updates.get("scheduleDate")));
+        }
+        if (updates.containsKey("price")) {
+            Object priceObj = updates.get("price");
+            BigDecimal price;
+            if (priceObj instanceof Integer) {
+                price = new BigDecimal((Integer) priceObj);
+            } else if (priceObj instanceof Double) {
+                price = BigDecimal.valueOf((Double) priceObj);
+            } else if (priceObj instanceof String) {
+                price = new BigDecimal((String) priceObj);
+            } else {
+                throw new RuntimeException("Invalid price format");
+            }
+            orderService.setPrice(price);
+        }
+
+        // 7. Save the updated service info
+        orderServiceTypeRepository.save(orderService);
+    }
+
+
+
+
 
 }

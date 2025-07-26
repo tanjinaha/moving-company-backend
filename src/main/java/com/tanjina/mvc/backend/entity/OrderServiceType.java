@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Map;
 
 
 @Entity
@@ -47,6 +48,12 @@ public class OrderServiceType {
         this.scheduleDate = scheduleDate;
         this.price = price;
     }
+    public void patchOrderDetailsFromMap(Integer orderId, Map<String, Object> updates) {
+        // 1. Load order
+        // 2. Update fields conditionally if present in `updates`
+        // 3. Save order and order service(s)
+    }
+
 
     public Integer getOrderServiceTypeId() {
         return orderServiceTypeId;

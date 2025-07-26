@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
 
 
 @CrossOrigin(origins = "http://localhost:5173")
@@ -91,6 +92,8 @@ public class OrderController
     public ResponseEntity<String> updateOrderDetails(
             @PathVariable Integer id,
             @RequestBody OrderDetailsDTO dto) {
+        System.out.println("Update called for order ID: " + id + ", with data: " + dto);
+
 
         try {
             orderService.updateOrderDetailsFromDTO(id, dto);  // 📦 Send full DTO to service
@@ -101,6 +104,18 @@ public class OrderController
         }
     }
 
+    @PatchMapping("/{id}")
+    public ResponseEntity<String> patchOrderDetails(
+            @PathVariable Integer id,
+            @RequestBody Map<String, Object> updates) {
+        try {
+            orderService.patchOrder(id, updates);
+            return ResponseEntity.ok("✅ Order partially updated successfully");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("❌ Error: " + e.getMessage());
+        }
+    }
 
 
     // DELETE /orders/{id}
